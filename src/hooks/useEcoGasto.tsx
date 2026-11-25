@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Gasto } from '../types/gasto';
+import { Gasto } from '../util/gasto';
 
 interface EcoGastoContextType {
   presupuesto: number;

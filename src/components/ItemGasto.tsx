@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Gasto } from '../types/gasto';
+import { Gasto } from '../util/gasto';
 
 interface ItemGastoProps {
   gasto: Gasto;
