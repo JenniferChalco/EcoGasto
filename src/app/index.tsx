@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ItemGasto } from '../components/ItemGasto';
 import { TarjetaSaldo } from '../components/TarjetaSaldo';
-import { useEcoGasto } from '../hooks/useEcoGasto';
+import { useEcoGasto } from '../hooks/usePresupuesto';
 
 export default function InicioScreen() {
   const router = useRouter();

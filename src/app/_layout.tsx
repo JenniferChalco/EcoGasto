@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { EcoGastoProvider } from '../hooks/useEcoGasto';
+import { EcoGastoProvider } from '../hooks/usePresupuesto';
 
 export default function RootLayout() {
   return (

@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useEcoGasto } from '../hooks/useEcoGasto';
+import { useEcoGasto } from '../hooks/usePresupuesto';
 
 export default function AgregarScreen() {
   const router = useRouter();
