@@ -1,29 +1,53 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useEcoGasto } from '../hooks/usePresupuesto';
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEcoGasto } from '../hooks/EcoGastoContext';
+import { convertirANumero } from '../util/formato';
+import { CategoriaGasto, OPCIONES_GASTO } from '../util/types';
+import { styles } from './agregar.styles';
 
 export default function AgregarScreen() {
   const router = useRouter();
   const { presupuesto, definirPresupuesto, agregarGasto } = useEcoGasto();
 
-  const [motivo, setMotivo] = useState('');
+  // Guarda qué opción de las 5 está marcada
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaGasto | null>(null);
+  // Guarda el texto escrito únicamente cuando el usuario elige "Otro"
+  const [otroMotivo, setOtroMotivo] = useState('');
+  // Guarda el monto del gasto y el presupuesto semanal
   const [montoGasto, setMontoGasto] = useState('');
   const [nuevoPresupuesto, setNuevoPresupuesto] = useState(presupuesto.toString());
 
+  // Valida que haya seleccionado una opción (y escrito el detalle si eligió "Otro")
   const handleGuardarGasto = () => {
-    const valor = parseFloat(montoGasto.replace(',', '.'));
-    if (!motivo.trim() || isNaN(valor) || valor <= 0) {
-      Alert.alert('Datos incompletos', 'Escribe un motivo y un monto válido mayor a 0.');
+    if (!categoriaSeleccionada) {
+      Alert.alert('Falta seleccionar', 'Elige una opción de gasto (Comida, Pasaje, etc.).');
       return;
     }
 
-    agregarGasto(motivo.trim(), valor);
+    // Si eligió "Otro", es obligatorio que escriba en qué gastó
+    if (categoriaSeleccionada === 'Otro' && !otroMotivo.trim()) {
+      Alert.alert('Campo obligatorio', 'Escribe en qué gastaste dentro de la opción "Otro".');
+      return;
+    }
+
+    const valor = convertirANumero(montoGasto);
+    if (isNaN(valor) || valor <= 0) {
+      Alert.alert('Monto inválido', 'Ingresa un monto válido mayor a 0.');
+      return;
+    }
+
+    // Define el texto final: si es "Otro" usa lo escrito; si no, usa el nombre de la categoría
+    const motivoFinal =
+      categoriaSeleccionada === 'Otro' ? otroMotivo.trim() : categoriaSeleccionada;
+
+    agregarGasto(motivoFinal, valor);
     router.back();
   };
 
+  // Valida el nuevo presupuesto, lo actualiza y regresa a Inicio
   const handleGuardarPresupuesto = () => {
-    const valor = parseFloat(nuevoPresupuesto.replace(',', '.'));
+    const valor = convertirANumero(nuevoPresupuesto);
     if (isNaN(valor) || valor < 0) {
       Alert.alert('Valor inválido', 'Ingresa un presupuesto válido.');
       return;
@@ -34,17 +58,40 @@ export default function AgregarScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
+      {/* Formulario 1: Registrar un gasto diario */}
       <View style={styles.bloque}>
         <Text style={styles.titulo}>Nuevo gasto</Text>
 
         <Text style={styles.label}>¿En qué gastaste?</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej. Pasaje, Colación, Copias"
-          value={motivo}
-          onChangeText={setMotivo}
-        />
+        {/* Dibuja los botones de opciones: Comida, Pasaje, Materiales, Copias, Otro */}
+        <View style={styles.contenedorOpciones}>
+          {OPCIONES_GASTO.map((opcion) => {
+            const estaActiva = categoriaSeleccionada === opcion;
+            return (
+              <Pressable
+                key={opcion}
+                style={[styles.opcion, estaActiva && styles.opcionActiva]}
+                onPress={() => setCategoriaSeleccionada(opcion)}
+              >
+                <Text style={styles.textoOpcion}>{opcion}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Caja de texto que aparece SOLO si el usuario selecciona "Otro" */}
+        {categoriaSeleccionada === 'Otro' && (
+          <>
+            <Text style={styles.label}>Especifica en qué gastaste (obligatorio):</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. Recarga, Medicina, Regalo"
+              value={otroMotivo}
+              onChangeText={setOtroMotivo}
+            />
+          </>
+        )}
 
         <Text style={styles.label}>Monto ($)</Text>
         <TextInput
@@ -60,6 +107,7 @@ export default function AgregarScreen() {
         </Pressable>
       </View>
 
+      {/* Formulario 2: Cambiar el presupuesto semanal */}
       <View style={styles.bloque}>
         <Text style={styles.titulo}>Presupuesto semanal ($)</Text>
         <TextInput
@@ -74,64 +122,6 @@ export default function AgregarScreen() {
           <Text style={styles.textoBoton}>Actualizar Presupuesto</Text>
         </Pressable>
       </View>
-    </View>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 18,
-    gap: 20,
-  },
-  bloque: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#3D1C1B',
-    borderRadius: 16,
-    padding: 16,
-  },
-  titulo: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#3D1C1B',
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3D1C1B',
-    marginBottom: 4,
-  },
-  input: {
-    backgroundColor: '#EBF9FF',
-    borderWidth: 1.5,
-    borderColor: '#3D1C1B',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 12,
-    color: '#3D1C1B',
-  },
-  botonGuardar: {
-    backgroundColor: '#FF8EB2',
-    borderWidth: 2,
-    borderColor: '#3D1C1B',
-    borderRadius: 10,
-    padding: 14,
-    alignItems: 'center',
-  },
-  botonSecundario: {
-    backgroundColor: '#D6F3FF',
-    borderWidth: 2,
-    borderColor: '#3D1C1B',
-    borderRadius: 10,
-    padding: 14,
-    alignItems: 'center',
-  },
-  textoBoton: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#3D1C1B',
-  },
-});
